@@ -1,11 +1,57 @@
+
+.color--bg--white {
+  background: #F7F7F7;
+}
+
+.color--bg--teal {
+  background: #0CB4F1;
+}
+
+.color--bg--gray {
+  background: #ACACAC;
+}
+
+.color--bg--light-gray {
+  background: #9EAAB4;
+}
+
+.color--white {
+  color: #F7F7F7;
+}
+
+.color--teal {
+  color: #0CB4F1;
+}
+
+.color--gray {
+  color: #ACACAC;
+}
+
+.color--light-gray {
+  color: #9EAAB4;
+}
+
 .icon {
-  font-size: 1.5rem;
-  color: inherit;
+  font-size: 1.75rem;
 }
 
 .icon-container {
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  font-size: 1.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
   .icon {
-    font-size: 1.75rem;
-    color: inherit;
+    font-size: inherit;
+    color: black;
   }
 }
+
+.icon-container:hover {
+  background-color: rgb(188, 188, 188);
+}
+

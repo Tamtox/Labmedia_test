@@ -1,7 +1,5 @@
-// Dependencies
+import "@/components/input/input.scss";
 
-// Styles
-import './input.scss';
 
 type InputProps = {
   children: React.ReactNode | null;
@@ -9,7 +7,7 @@ type InputProps = {
   classNameWrapper?: string;
   defaultValue?: string;
   disabled?: boolean;
-  onChange?: Function;
+  onChange?: (newValue: string) => void;
   placeholder?: string;
   required?: boolean;
   type?: string;
@@ -18,15 +16,15 @@ type InputProps = {
 
 const inputProps: InputProps = {
   children: null,
-  className: '',
-  classNameWrapper: '',
-  defaultValue: '',
+  className: "",
+  classNameWrapper: "",
+  defaultValue: "",
   disabled: false,
   onChange: undefined,
-  placeholder: '',
+  placeholder: "",
   required: false,
-  type: 'text',
-  value: '',
+  type: "text",
+  value: "",
 };
 const Input = ({
   value,
@@ -42,18 +40,18 @@ const Input = ({
 }: InputProps): JSX.Element => {
   return (
     <div className={`input-container ${classNameWrapper}`}>
+      {children}
       <input
         placeholder={placeholder && placeholder}
         value={value && value}
         defaultValue={defaultValue && defaultValue}
-        type={type ? type : 'text'}
+        type={type ? type : "text"}
         required={required || false}
         onChange={(e: any) => {
-          onChange ? onChange(e.target.value) : null;
+          onChange ? onChange( e.target.value ) : null;
         }}
         className={`input ${className}`}
       ></input>
-      {children}
     </div>
   );
 };
