@@ -4,12 +4,14 @@
 import '@/styles/home.scss';
 
 import axios from 'axios';
-import React, { useEffect, useReducer } from 'react';
+import React, { useEffect, useMemo, useReducer } from 'react';
 import { AiOutlineClear } from 'react-icons/ai';
 import { BsSearch } from 'react-icons/bs';
+import { FaRegArrowAltCircleLeft, FaRegArrowAltCircleRight } from 'react-icons/fa';
 import { IoClose } from 'react-icons/io5';
 
 import Input from '@/components/input/input';
+import Loading from '@/components/loading/Loading';
 import Modal from '@/components/modal/modal';
 import { IUsersStore, useUserStore } from '@/store/user_store';
 import { IUser } from '@/types/types';
@@ -54,9 +56,9 @@ function filterUsers(users: IUser[], searchQuery: string, sortQuery: string) {
 }
 
 const Home: React.FC = (): JSX.Element => {
-  const { users, filteredUsers, currentPage, setUsers, setFilteredUsers, deleteUser } = useUserStore(
-    (state: IUsersStore) => state,
-  );
+  const { users, filteredUsers, currentPage, loading, setUsers, setFilteredUsers, deleteUser, setPage, setLoading } =
+    useUserStore((state: IUsersStore) => state);
+  // State
   const [state, setState] = useReducer(
     (state: IHomeState, action: Partial<IHomeState>) => ({
       ...state,
@@ -91,14 +93,30 @@ const Home: React.FC = (): JSX.Element => {
   const toggleModalHandler = (userId = '') => {
     setState({ modalOpen: !state.modalOpen, userId });
   };
+  // Pagination
+  const paginationHandler = (direction: string) => {
+    const isLastPage = Math.ceil(filteredUsers.length / 5) === currentPage;
+    if (direction === 'left' && currentPage > 1) {
+      setPage(currentPage - 1);
+    } else if (direction === 'right' && !isLastPage) {
+      setPage(currentPage + 1);
+    }
+  };
   // Load users
   const getUsers = async () => {
-    const users: { data: IUser[] } = await axios.request({
-      url: 'https://5ebbb8e5f2cfeb001697d05c.mockapi.io/users',
-      method: 'GET',
-    });
-    const { data } = users;
-    setUsers(data);
+    setLoading(true);
+    try {
+      const users: { data: IUser[] } = await axios.request({
+        url: 'https://5ebbb8e5f2cfeb001697d05c.mockapi.io/users',
+        method: 'GET',
+      });
+      const { data } = users;
+      setUsers(data);
+    } catch (error) {
+      axios.isAxiosError(error) ? alert(error.response?.data || error.message) : console.log(error);
+    } finally {
+      setLoading(false);
+    }
   };
   useEffect(() => {
     getUsers();
@@ -144,41 +162,66 @@ const Home: React.FC = (): JSX.Element => {
           Рейтинг
         </p>
       </div>
-      <div className={`list`}>
-        <table className={`list__table`}>
-          <tr className={`list__table__row`}>
-            <th className={`row__element`}>Имя пользователя</th>
-            <th className={`row__element`}>E-mail</th>
-            <th className={`row__element`}>Дата регистрации</th>
-            <th className={`row__element`}>Рейтинг</th>
-            <th className={`row__element`}></th>
-          </tr>
-          {filteredUsers.map((user: IUser) => {
-            /* eslint-disable-next-line react/jsx-key*/
-            return (
-              <tr key={user.id} className={`list__table__row`}>
-                <td className={`username row__element color--teal`}>{user.username}</td>
-                <td className={`emai row__element`}>{user.email}</td>
-                <td className={`registration-date row__element`}>
-                  {new Date(user.registration_date).toLocaleDateString()}
-                </td>
-                <td className={`rating row__element`}>{user.rating}</td>
-                <td className={`delete row__element`}>
-                  <span
-                    className={`icon-container`}
-                    onClick={() => {
-                      toggleModalHandler(user.id);
-                    }}
-                  >
-                    <IoClose className={`icon`} />
-                  </span>
-                </td>
+      {loading ? (
+        <Loading height="70vh" />
+      ) : (
+        <>
+          <div className={`list`}>
+            <table className={`list__table`}>
+              <tr className={`list__table__row`}>
+                <th className={`row__element`}>Имя пользователя</th>
+                <th className={`row__element`}>E-mail</th>
+                <th className={`row__element`}>Дата регистрации</th>
+                <th className={`row__element`}>Рейтинг</th>
+                <th className={`row__element`}></th>
               </tr>
-            );
-          })}
-        </table>
-      </div>
-      <div className={`pagination`}></div>
+              {filteredUsers.map((user: IUser, index: number) => {
+                if (index < currentPage * 5 && index >= (currentPage - 1) * 5) {
+                  return (
+                    <tr key={user.id} className={`list__table__row`}>
+                      <td className={`username row__element color--teal`}>{user.username}</td>
+                      <td className={`emai row__element`}>{user.email}</td>
+                      <td className={`registration-date row__element`}>
+                        {new Date(user.registration_date).toLocaleDateString()}
+                      </td>
+                      <td className={`rating row__element`}>{user.rating}</td>
+                      <td className={`delete row__element`}>
+                        <span
+                          className={`icon-container`}
+                          onClick={() => {
+                            toggleModalHandler(user.id);
+                          }}
+                        >
+                          <IoClose className={`icon`} />
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                }
+              })}
+            </table>
+          </div>
+          <div className={`pagination`}>
+            <div
+              className={`pagination__prev icon-container`}
+              onClick={() => {
+                paginationHandler('left');
+              }}
+            >
+              <FaRegArrowAltCircleLeft className={`icon`} />
+            </div>
+            <div>{currentPage}</div>
+            <div
+              className={`pagination__next icon-container`}
+              onClick={() => {
+                paginationHandler('right');
+              }}
+            >
+              <FaRegArrowAltCircleRight className={`icon`} />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };

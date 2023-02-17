@@ -31,7 +31,7 @@ const Modal = ({ open, onClose, userId, deleteUser }: ModalProps): JSX.Element =
         <p className={`modal__text`}>Вы уверены, что хотите удалить пользователя?</p>
         <div className={`modal__buttons`}>
           <Button
-            className={`color--bg--gray`}
+            className={`modal__buttons__accept`}
             onClick={() => {
               deleteUser(userId);
               onClose();
