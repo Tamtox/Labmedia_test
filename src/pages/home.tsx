@@ -1,20 +1,25 @@
-import "@/styles/home.scss";
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+import '@/styles/home.scss';
 
-import axios from "axios";
-import React, { useEffect, useReducer } from "react";
-import { BsSearch } from "react-icons/bs";
-import { IoClose } from "react-icons/io5";
+import axios from 'axios';
+import React, { useEffect, useReducer } from 'react';
+import { AiOutlineClear } from 'react-icons/ai';
+import { BsSearch } from 'react-icons/bs';
+import { IoClose } from 'react-icons/io5';
 
-import Input from "@/components/input/input";
-import Modal from "@/components/modal/modal";
-import { IUsersStore, useUserStore } from "@/store/user_store";
-import { IUser } from "@/types/types";
+import Input from '@/components/input/input';
+import Modal from '@/components/modal/modal';
+import { IUsersStore, useUserStore } from '@/store/user_store';
+import { IUser } from '@/types/types';
 
 interface IHomeState {
   searchQuery: string;
   sortQuery: string;
   page: string;
   modalOpen: boolean;
+  userId: string;
 }
 
 // Filter by search query or sort query
@@ -23,34 +28,34 @@ function filterUsers(users: IUser[], searchQuery: string, sortQuery: string) {
   if (searchQuery) {
     const searchLow = searchQuery.toLowerCase();
     result = result.filter((user: IUser) => {
-      if (
-        user.email.toLowerCase().includes(searchLow) ||
-        user.username.toLowerCase().includes(searchLow)
-      ) {
+      if (user.email.toLowerCase().includes(searchLow) || user.username.toLowerCase().includes(searchLow)) {
         return user;
       }
     });
   }
   if (sortQuery) {
-    if (sortQuery === "Registration date") {
+    if (sortQuery === 'regDateAsc') {
       result = result.sort(
         (itemA: IUser, itemB: IUser) =>
-          new Date(itemA.registration_date).getTime() -
-          new Date(itemB.registration_date).getTime()
+          new Date(itemA.registration_date).getTime() - new Date(itemB.registration_date).getTime(),
       );
-    } else if (sortQuery === "Rating") {
+    } else if (sortQuery === 'regDateDesc') {
       result = result.sort(
         (itemA: IUser, itemB: IUser) =>
-          Number(itemA.rating) - Number(itemB.rating)
+          new Date(itemB.registration_date).getTime() - new Date(itemA.registration_date).getTime(),
       );
+    } else if (sortQuery === 'ratingAsc') {
+      result = result.sort((itemA: IUser, itemB: IUser) => Number(itemA.rating) - Number(itemB.rating));
+    } else if (sortQuery === 'ratingDesc') {
+      result = result.sort((itemA: IUser, itemB: IUser) => Number(itemB.rating) - Number(itemA.rating));
     }
   }
   return result;
 }
 
 const Home: React.FC = (): JSX.Element => {
-  const { users, filteredUsers, setUsers, setFilteredUsers } = useUserStore(
-    (state: IUsersStore) => state
+  const { users, filteredUsers, currentPage, setUsers, setFilteredUsers, deleteUser } = useUserStore(
+    (state: IUsersStore) => state,
   );
   const [state, setState] = useReducer(
     (state: IHomeState, action: Partial<IHomeState>) => ({
@@ -58,33 +63,39 @@ const Home: React.FC = (): JSX.Element => {
       ...action,
     }),
     {
-      searchQuery: "",
-      sortQuery: "",
-      page: "1",
+      searchQuery: '',
+      sortQuery: '',
+      page: '1',
       modalOpen: false,
-    }
+      userId: '',
+    },
   );
   // Search handler
-  const searchInputHandler = (newVal: string) => {
-    setState({ searchQuery: newVal });
-    const filteredUsers = filterUsers(users, newVal, state.sortQuery);
+  const searchInputHandler = (newSearchQuery: string) => {
+    setState({ searchQuery: newSearchQuery });
+    const filteredUsers = filterUsers(users, newSearchQuery, state.sortQuery);
     setFilteredUsers(filteredUsers);
   };
   // Sort Handler
-  const sortHandler = (newVal: string) => {
-    setState({ sortQuery: newVal });
-    const filteredUsers = filterUsers(users, state.searchQuery, newVal);
+  const sortHandler = (newSortQuery: string) => {
+    setState({ sortQuery: newSortQuery });
+    const filteredUsers = filterUsers(users, state.searchQuery, newSortQuery);
     setFilteredUsers(filteredUsers);
   };
+  // Clear queries
+  const clearQueries = () => {
+    setState({ searchQuery: '', sortQuery: '' });
+    setFilteredUsers(users);
+  };
   // Toggle modal
-  const toggleModalHandler = () => {
-    setState({ modalOpen: !state.modalOpen });
+  const toggleModalHandler = (userId = '') => {
+    setState({ modalOpen: !state.modalOpen, userId });
   };
   // Load users
   const getUsers = async () => {
     const users: { data: IUser[] } = await axios.request({
-      url: "https://5ebbb8e5f2cfeb001697d05c.mockapi.io/users",
-      method: "GET",
+      url: 'https://5ebbb8e5f2cfeb001697d05c.mockapi.io/users',
+      method: 'GET',
     });
     const { data } = users;
     setUsers(data);
@@ -95,7 +106,7 @@ const Home: React.FC = (): JSX.Element => {
   return (
     <div className="home">
       {state.modalOpen ? (
-        <Modal open={state.modalOpen} onClose={toggleModalHandler} />
+        <Modal userId={state.userId} deleteUser={deleteUser} open={state.modalOpen} onClose={toggleModalHandler} />
       ) : null}
       <h3 className={`title`}>Список пользователей</h3>
       <div className={`search`}>
@@ -107,28 +118,46 @@ const Home: React.FC = (): JSX.Element => {
         >
           {state.searchQuery ? null : <BsSearch />}
         </Input>
-        <div className={`search__clear`}>
-          <img src="../assets/icon/Vector 4.svg" alt="" />
-          <p>Очистить фильтр</p>
-        </div>
+        {state.searchQuery || state.sortQuery ? (
+          <div className={`search__clear`} onClick={clearQueries}>
+            <AiOutlineClear className={`icon`} />
+            <p>Очистить фильтр</p>
+          </div>
+        ) : null}
       </div>
-      <div className={`sort`}></div>
+      <div className={`sort color--gray`}>
+        <p className={`sort__title`}>Сортировка:</p>
+        <p
+          className={`sort__select ${state.sortQuery.includes('regDate') && 'active'}`}
+          onClick={() => {
+            sortHandler(state.sortQuery === 'regDateAsc' ? 'regDateDesc' : 'regDateAsc');
+          }}
+        >
+          Дата регистрации
+        </p>
+        <p
+          className={`sort__select ${state.sortQuery.includes('rating') && 'active'}`}
+          onClick={() => {
+            sortHandler(state.sortQuery === 'ratingAsc' ? 'ratingDesc' : 'ratingAsc');
+          }}
+        >
+          Рейтинг
+        </p>
+      </div>
       <div className={`list`}>
         <table className={`list__table`}>
           <tr className={`list__table__row`}>
-            <td className={`row__element`}>Имя пользователя</td>
-            <td className={`row__element`}>E-mail</td>
-            <td className={`row__element`}>Дата регистрации</td>
-            <td className={`row__element`}>Рейтинг</td>
-            <td className={`row__element`}></td>
+            <th className={`row__element`}>Имя пользователя</th>
+            <th className={`row__element`}>E-mail</th>
+            <th className={`row__element`}>Дата регистрации</th>
+            <th className={`row__element`}>Рейтинг</th>
+            <th className={`row__element`}></th>
           </tr>
           {filteredUsers.map((user: IUser) => {
             /* eslint-disable-next-line react/jsx-key*/
             return (
               <tr key={user.id} className={`list__table__row`}>
-                <td className={`username row__element color--teal`}>
-                  {user.username}
-                </td>
+                <td className={`username row__element color--teal`}>{user.username}</td>
                 <td className={`emai row__element`}>{user.email}</td>
                 <td className={`registration-date row__element`}>
                   {new Date(user.registration_date).toLocaleDateString()}
@@ -137,7 +166,9 @@ const Home: React.FC = (): JSX.Element => {
                 <td className={`delete row__element`}>
                   <span
                     className={`icon-container`}
-                    onClick={toggleModalHandler}
+                    onClick={() => {
+                      toggleModalHandler(user.id);
+                    }}
                   >
                     <IoClose className={`icon`} />
                   </span>
@@ -147,6 +178,7 @@ const Home: React.FC = (): JSX.Element => {
           })}
         </table>
       </div>
+      <div className={`pagination`}></div>
     </div>
   );
 };

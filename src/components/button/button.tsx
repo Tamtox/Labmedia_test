@@ -1,7 +1,7 @@
 // Dependencies
 
 // Styles
-import "./button.scss";
+import './button.scss';
 
 type ButtonProps = {
   children: React.ReactNode | null;
@@ -12,23 +12,18 @@ type ButtonProps = {
 
 const buttonProps: ButtonProps = {
   children: null,
-  className: "",
+  className: '',
   disabled: false,
   onClick: undefined,
 };
 
-const Button = ({
-  className,
-  children,
-  disabled,
-  onClick,
-}: ButtonProps): JSX.Element => {
+const Button = ({ className, children, disabled, onClick }: ButtonProps): JSX.Element => {
   return (
     <button
       onClick={() => {
         onClick ? onClick() : null;
       }}
-      className={`button ${className} ${disabled && ""}`}
+      className={`button ${className} ${disabled && ''}`}
     >
       <p className={`button__text`}>{children}</p>
     </button>
